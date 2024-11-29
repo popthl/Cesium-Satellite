@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <meta name="description" content="Use Viewer to start building new applications or easily embed Cesium into existing applications.">
+    <meta name="cesium-sandcastle-labels" content="Beginner, Showcases">
+    <title>Cesium Demo</title>
+    <script type="text/javascript" src="../Sandcastle-header.js"></script>
+    <script type="module" src="../load-cesium-es6.js"></script>
+  </head>
+  <body
+    class="sandcastle-loading"
+    data-sandcastle-bucket="bucket-requirejs.html"
+  >
+<style>
+      @import url(../templates/bucket.css);
+    </style>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <div id="loadingOverlay"><h1>Loading...</h1></div>
+    <div id="toolbar"></div>
+    <script id="cesium_sandcastle_script">
+window.startup = async function (Cesium) {
+    'use strict';
+//Sandcastle_Begin
+const viewer = new Cesium.Viewer("cesiumContainer");
+const promise = Cesium.CzmlDataSource.load("../../SampleData/newgps.czml");
+/*var redLine = viewer.entities.add({
+  name: "Red dashed line",
+  polyline: {
+    positions: [],
+    width: 5,
+    material: new Cesium.PolylineDashMaterialProperty({
+      color: Cesium.Color.RED,
+    }),
+  },
+});*/
+
+var options = [{
+  text:"Fly to ...",
+  onselect: function () {
+    viewer.camera.flyHome(0);
+  }
+}];
+let gpsshow = true;
+promise.then(function (dataSource) {
+  viewer.dataSources.add(dataSource);
+  const entities = dataSource.entities.values;
+  for (let i = 0; i < entities.length; i++) {
+	const entity = entities[i];
+	const name = entity.id.split("/");//name;//.
+	console.log(name[1]);
+    if(name[1]!==undefined){
+      var option = {
+        text:name[1],
+        onselect: function () {
+          console.log(entity.id);
+          if(entity.show === false){
+            entity.show = true;
+          }else{
+            viewer.trackedEntity = entity;
+          }
+        },
+      };
+      options.push(option);  
+    }
+  }
+  const gps = dataSource.entities.getById("Satellite/GPS");
+  const sat = dataSource.entities.getById("Satellite/GPS_B_CHASE_300s");
+  const sat1 = dataSource.entities.getById("Satellite/Chase1km");
+  const sat2 = dataSource.entities.getById("Satellite/Chase3km");
+  const sat3 = dataSource.entities.getById("Satellite/Chase5km");
+  const sat4 = dataSource.entities.getById("Satellite/Chase10km");
+        
+  const redLine = viewer.entities.add({
+    polyline: {
+    // This callback updates positions each frame.
+    positions: new Cesium.CallbackProperty(function (time, result) {
+      result=[];
+      var pos0 = gps.position.getValue(time);
+            for(let i=0;i<20;i++){
+              var t1=Cesium.JulianDate.addSeconds(time,15*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = sat.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+
+      return result;
+    },false),
+    width: 1,
+    material: Cesium.Color.RED,
+  },
+});
+  const redLine1 = viewer.entities.add({
+    polyline: {
+    // This callback updates positions each frame.
+    positions: new Cesium.CallbackProperty(function (time, result) {
+      result=[];
+      var pos0 = gps.position.getValue(time);
+            for(let i=0;i<80;i++){
+              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = sat1.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+
+      return result;
+    },false),
+    width: 1,
+    material: Cesium.Color.YELLOW,
+  },
+});
+  const redLine2 = viewer.entities.add({
+    polyline: {
+    // This callback updates positions each frame.
+    positions: new Cesium.CallbackProperty(function (time, result) {
+      result=[];
+      var pos0 = gps.position.getValue(time);
+            for(let i=0;i<80;i++){
+              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = sat2.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+
+      return result;
+    },false),
+    width: 1,
+    material: Cesium.Color.GREEN,
+  },
+});
+  const redLine3 = viewer.entities.add({
+    polyline: {
+    // This callback updates positions each frame.
+    positions: new Cesium.CallbackProperty(function (time, result) {
+      result=[];
+      var pos0 = gps.position.getValue(time);
+            for(let i=0;i<80;i++){
+              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = sat3.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+
+      return result;
+    },false),
+    width: 1,
+    material: Cesium.Color.VIOLET,
+  },
+});
+  const redLine4 = viewer.entities.add({
+    polyline: {
+    // This callback updates positions each frame.
+    positions: new Cesium.CallbackProperty(function (time, result) {
+      result=[];
+      var pos0 = gps.position.getValue(time);
+            for(let i=0;i<80;i++){
+              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = sat4.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+
+      return result;
+    },false),
+    width: 1,
+    material: Cesium.Color.MEDIUMSLATEBLUE,
+  },
+});
+
+        /*var t0=dataSource.clock.currentTime;
+        viewer.clock.onTick.addEventListener(function(){
+          var t = viewer.clock.currentTime;
+          //console.log(t);
+          if (Cesium.JulianDate.secondsDifference(t,t0)>1){
+            t0=t;
+            //console.log(t);
+            var pos0 = gps.position.getValue(t);
+            //console.log(pos);
+            satcircle=[];
+            for(let i=0;i<20;i++){
+              var t1=Cesium.JulianDate.addSeconds(t,15*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = sat.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                satcircle.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+            //console.log(satcircle);
+            redLine.polyline.positions = satcircle;
+          }
+          
+        });*/
+
+  Sandcastle.addToolbarMenu(options,"toolbar");
+  Sandcastle.addToolbarButton("Circle", function () {
+      viewer.clock.shouldAnimate = true;
+      viewer.clock.tick();
+      viewer.clock.shouldAnimate = false;
+    
+      var t = viewer.clock.currentTime;
+      var pos0 = gps.position.getValue(t);
+      var satcircle=[];
+            for(let i=0;i<20;i++){
+              var t1=Cesium.JulianDate.addSeconds(t,15*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = sat.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                satcircle.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+            //console.log(satcircle);
+            redLine.polyline.positions = satcircle;
+    
+    
+  });
+
+});//Sandcastle_End
+    Sandcastle.finishedLoading();
+};
+if (typeof Cesium !== 'undefined') {
+    window.startupCalled = true;
+    window.startup(Cesium).catch((error) => {
+      "use strict";
+      console.error(error);
+    });
+}
+</script>
+</body>
+</html>
