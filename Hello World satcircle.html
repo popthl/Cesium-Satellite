@@ -22,26 +22,36 @@
     </style>
     <div id="cesiumContainer" class="fullSize"></div>
     <div id="loadingOverlay"><h1>Loading...</h1></div>
-    <div id="toolbar"></div>
-    <script id="cesium_sandcastle_script">
+    <div id="toolbar">
+      <div id="flytoMenu"></div>
+      <div id="hideMenu"></div>
+      <div id="pathMenu"></div>
+      <div id="sampleButtons1"></div>
+      <div id="sampleButtons2"></div>
+      <div id="sampleButtons3"></div>
+      <div id="sampleButtons4"></div>
+      <div id="sampleButtons5"></div>
+</div> <script id="cesium_sandcastle_script">
 window.startup = async function (Cesium) {
     'use strict';
 //Sandcastle_Begin
 const viewer = new Cesium.Viewer("cesiumContainer");
 const promise = Cesium.CzmlDataSource.load("../../SampleData/newgps.czml");
-/*var redLine = viewer.entities.add({
-  name: "Red dashed line",
-  polyline: {
-    positions: [],
-    width: 5,
-    material: new Cesium.PolylineDashMaterialProperty({
-      color: Cesium.Color.RED,
-    }),
-  },
-});*/
 
 var options = [{
   text:"Fly to ...",
+  onselect: function () {
+    viewer.camera.flyHome(0);
+  }
+}];
+var optionshide = [{
+  text:"Hide sat ...",
+  onselect: function () {
+    viewer.camera.flyHome(0);
+  }
+}];
+var optionpath = [{
+  text:"Sat orbit ...",
   onselect: function () {
     viewer.camera.flyHome(0);
   }
@@ -66,7 +76,21 @@ promise.then(function (dataSource) {
           }
         },
       };
-      options.push(option);  
+      options.push(option);
+      var opt = {
+        text:name[1],
+        onselect: function(){
+          entity.show = !entity.show;
+        },
+      };
+      optionshide.push(opt);
+      var optpath = {
+        text:name[1],
+        onselect: function(){
+          entity.path.show = !entity.path.show;
+        },
+      };
+      optionpath.push(optpath);
     }
   }
   const gps = dataSource.entities.getById("Satellite/GPS");
@@ -192,56 +216,29 @@ promise.then(function (dataSource) {
   },
 });
 
-        /*var t0=dataSource.clock.currentTime;
-        viewer.clock.onTick.addEventListener(function(){
-          var t = viewer.clock.currentTime;
-          //console.log(t);
-          if (Cesium.JulianDate.secondsDifference(t,t0)>1){
-            t0=t;
-            //console.log(t);
-            var pos0 = gps.position.getValue(t);
-            //console.log(pos);
-            satcircle=[];
-            for(let i=0;i<20;i++){
-              var t1=Cesium.JulianDate.addSeconds(t,15*i,new Cesium.JulianDate());
-              var pos1 = gps.position.getValue(t1);
-              var pos2 = sat.position.getValue(t1);
-              if(pos2!==undefined){
-              //console.log(pos);
-                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
-                satcircle.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
-              }
-            }
-            //console.log(satcircle);
-            redLine.polyline.positions = satcircle;
-          }
-          
-        });*/
 
-  Sandcastle.addToolbarMenu(options,"toolbar");
-  Sandcastle.addToolbarButton("Circle", function () {
-      viewer.clock.shouldAnimate = true;
-      viewer.clock.tick();
-      viewer.clock.shouldAnimate = false;
-    
-      var t = viewer.clock.currentTime;
-      var pos0 = gps.position.getValue(t);
-      var satcircle=[];
-            for(let i=0;i<20;i++){
-              var t1=Cesium.JulianDate.addSeconds(t,15*i,new Cesium.JulianDate());
-              var pos1 = gps.position.getValue(t1);
-              var pos2 = sat.position.getValue(t1);
-              if(pos2!==undefined){
-              //console.log(pos);
-                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
-                satcircle.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
-              }
-            }
-            //console.log(satcircle);
-            redLine.polyline.positions = satcircle;
-    
-    
-  });
+  Sandcastle.addToolbarButton("fly to:",function(){},"flytoMenu");
+  Sandcastle.addToolbarMenu(options,"flytoMenu");
+  //console.log(optionshide.length);
+  Sandcastle.addToolbarButton("Hide:",function(){},"hideMenu");
+  Sandcastle.addToolbarMenu(optionshide,"hideMenu");
+  Sandcastle.addToolbarButton("Orbit:",function(){},"pathMenu");
+  Sandcastle.addToolbarMenu(optionpath,"pathMenu");
+  Sandcastle.addToggleButton("CHASE",true,function(checked){
+    redLine.show=checked;
+  },"sampleButtons1");
+  Sandcastle.addToggleButton("1km",true,function(checked){
+    redLine1.show=checked;
+  },"sampleButtons2");
+  Sandcastle.addToggleButton("3km",true,function(checked){
+    redLine2.show=checked;
+  },"sampleButtons2");
+  Sandcastle.addToggleButton("5km",true,function(checked){
+    redLine3.show=checked;
+  },"sampleButtons3");
+  Sandcastle.addToggleButton("10km",true,function(checked){
+    redLine4.show=checked;
+  },"sampleButtons3");
 
 });//Sandcastle_End
     Sandcastle.finishedLoading();
