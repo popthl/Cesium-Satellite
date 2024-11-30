@@ -18,7 +18,7 @@
     data-sandcastle-bucket="bucket-requirejs.html"
   >
 <style>
-      @import url(../templates/bucket.css);
+      @import url(/popthl/Cesium-Satellite/edit/templates/bucket.css);
     </style>
     <div id="cesiumContainer" class="fullSize"></div>
     <div id="loadingOverlay"><h1>Loading...</h1></div>
@@ -99,6 +99,40 @@ promise.then(function (dataSource) {
   const sat2 = dataSource.entities.getById("Satellite/Chase3km");
   const sat3 = dataSource.entities.getById("Satellite/Chase5km");
   const sat4 = dataSource.entities.getById("Satellite/Chase10km");
+  const redLine = viewer.entities.add({
+    polyline: {
+    // This callback updates positions each frame.
+      positions: new Cesium.CallbackProperty(function (time, result) {
+        result=[];
+        var pos1 = geoeye.position.getValue(time);
+        var pos2 = iss.position.getValue(time);
+        result.push(pos1);
+        result.push(pos2);
+        return result;
+      },false),
+      arcType: Cesium.ArcType.NONE,
+      width: 5,
+      material: Cesium.Color.RED,
+    },
+  });
+
+  const label = viewer.entities.add({
+    position: new Cesium.CallbackProperty(function (time, result){
+      const Points = redLine.polyline.positions.getValue(time, result);
+      const midp = Cesium.Cartesian3.add(Points[0],Points[1],new Cesium.Cartesian3());
+      return Cesium.Cartesian3.divideByScalar( midp, 2,new Cesium.Cartesian3());
+    }, false),
+    label: {
+      // This callback updates the length to print each frame.
+      text: new Cesium.CallbackProperty(function (time, result){
+        const Points = redLine.polyline.positions.getValue(time, result);
+        const lengthInMeters = Cesium.Cartesian3.distance(Points[0],Points[1]);
+        return `${(lengthInMeters / 1000).toFixed(1)} km`;
+      }, false),
+      font: "20px sans-serif",
+      pixelOffset: new Cesium.Cartesian2(0.0, 20),
+    },
+  });
         
   const redLine = viewer.entities.add({
     polyline: {
