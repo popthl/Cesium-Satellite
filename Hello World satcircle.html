@@ -18,7 +18,7 @@
     data-sandcastle-bucket="bucket-requirejs.html"
   >
 <style>
-      @import url(/popthl/Cesium-Satellite/edit/templates/bucket.css);
+      @import url(../templates/bucket.css);
     </style>
     <div id="cesiumContainer" class="fullSize"></div>
     <div id="loadingOverlay"><h1>Loading...</h1></div>
@@ -26,11 +26,6 @@
       <div id="flytoMenu"></div>
       <div id="hideMenu"></div>
       <div id="pathMenu"></div>
-      <div id="sampleButtons1"></div>
-      <div id="sampleButtons2"></div>
-      <div id="sampleButtons3"></div>
-      <div id="sampleButtons4"></div>
-      <div id="sampleButtons5"></div>
 </div> <script id="cesium_sandcastle_script">
 window.startup = async function (Cesium) {
     'use strict';
@@ -59,12 +54,115 @@ var optionpath = [{
 let gpsshow = true;
 promise.then(function (dataSource) {
   viewer.dataSources.add(dataSource);
+  const gps = dataSource.entities.getById("Satellite/GPS");
   const entities = dataSource.entities.values;
   for (let i = 0; i < entities.length; i++) {
 	const entity = entities[i];
 	const name = entity.id.split("/");//name;//.
-	console.log(name[1]);
+    //const color = Cesium.Color.fromRandom();
+    //const rgba = entity.label.fillColor;
+    //console.log(Object.keys(rgba));
+    const color = entity.label.fillColor.getValue();
+    //console.log(color);
+    //console.log(Cesium.Color.fromCartesian4(entity.label.fillColor));
+    console.log(name[1]);
     if(name[1]!==undefined){
+      if(name[1]!=="GPS"){
+        const orbline = viewer.entities.add({
+          polyline: {
+          // This callback updates positions each frame.
+          positions: new Cesium.CallbackProperty(function (time, result) {
+            result=[];
+            var step = 15;
+            var n =20;
+            if(name[1].includes("km")){
+               step = 1800;
+               n=80;
+            }else{
+              
+              const matches =  name[1].match(/\d+/);
+              n=20;
+              step = 5*parseInt(matches[0], 10)/100;
+            }
+      var pos0 = gps.position.getValue(time);
+            for(let i=0;i<n;i++){
+              var t1=Cesium.JulianDate.addSeconds(time,step*i,new Cesium.JulianDate());
+              var pos1 = gps.position.getValue(t1);
+              var pos2 = entity.position.getValue(t1);
+              if(pos2!==undefined){
+              //console.log(pos);
+                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
+                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
+              }
+            }
+
+            return result;
+          },false),
+          width: 1,
+          material: color,//.fromCartesian4(entity.label.fillColor),
+          },
+        });
+
+        const lnkline = viewer.entities.add({
+          polyline: {
+          // This callback updates positions each frame.
+          positions: new Cesium.CallbackProperty(function (time, result) {
+            result=[];
+            var pos0 = gps.position.getValue(time);
+            var pos1 = entity.position.getValue(time);
+            result.push(pos0);
+            if(pos1!==undefined){
+              result.push(pos1);
+            }
+            return result;
+          },false),
+            arcType: Cesium.ArcType.NONE,
+          width: 1,
+          material: color,
+          },
+        });
+
+  const label = viewer.entities.add({
+    position: new Cesium.CallbackProperty(function (time, result){
+      const Points = lnkline.polyline.positions.getValue(time, result);
+      if(Points.length===2){
+      const midp = Cesium.Cartesian3.add(Points[0],Points[1],new Cesium.Cartesian3());
+      return Cesium.Cartesian3.divideByScalar( midp, 2,new Cesium.Cartesian3());
+      }
+    }, false),
+    label: {
+      // This callback updates the length to print each frame.
+      text: new Cesium.CallbackProperty(function (time, result){
+        const Points = lnkline.polyline.positions.getValue(time, result);
+        if(Points.length===2){
+        const lengthInMeters = Cesium.Cartesian3.distance(Points[0],Points[1]);
+        return `${(lengthInMeters / 1000).toFixed(1)} km`;
+        }
+      }, false),
+      font: "20px sans-serif",
+      pixelOffset: new Cesium.Cartesian2(0.0, 20),
+    },
+  });
+      var opt = {
+        text:name[1],
+        onselect: function(){
+          entity.show = !entity.show;
+          lnkline.show = entity.show;
+          label.show = entity.show;
+          orbline.show = entity.show;
+        },
+      };
+      optionshide.push(opt);
+      }
+      else{
+      var opt1 = {
+        text:name[1],
+        onselect: function(){
+          entity.show = !entity.show;
+        },
+      };
+      optionshide.push(opt1);
+      }
       var option = {
         text:name[1],
         onselect: function () {
@@ -77,13 +175,6 @@ promise.then(function (dataSource) {
         },
       };
       options.push(option);
-      var opt = {
-        text:name[1],
-        onselect: function(){
-          entity.show = !entity.show;
-        },
-      };
-      optionshide.push(opt);
       var optpath = {
         text:name[1],
         onselect: function(){
@@ -93,162 +184,6 @@ promise.then(function (dataSource) {
       optionpath.push(optpath);
     }
   }
-  const gps = dataSource.entities.getById("Satellite/GPS");
-  const sat = dataSource.entities.getById("Satellite/GPS_B_CHASE_300s");
-  const sat1 = dataSource.entities.getById("Satellite/Chase1km");
-  const sat2 = dataSource.entities.getById("Satellite/Chase3km");
-  const sat3 = dataSource.entities.getById("Satellite/Chase5km");
-  const sat4 = dataSource.entities.getById("Satellite/Chase10km");
-  const redLine = viewer.entities.add({
-    polyline: {
-    // This callback updates positions each frame.
-      positions: new Cesium.CallbackProperty(function (time, result) {
-        result=[];
-        var pos1 = geoeye.position.getValue(time);
-        var pos2 = iss.position.getValue(time);
-        result.push(pos1);
-        result.push(pos2);
-        return result;
-      },false),
-      arcType: Cesium.ArcType.NONE,
-      width: 5,
-      material: Cesium.Color.RED,
-    },
-  });
-
-  const label = viewer.entities.add({
-    position: new Cesium.CallbackProperty(function (time, result){
-      const Points = redLine.polyline.positions.getValue(time, result);
-      const midp = Cesium.Cartesian3.add(Points[0],Points[1],new Cesium.Cartesian3());
-      return Cesium.Cartesian3.divideByScalar( midp, 2,new Cesium.Cartesian3());
-    }, false),
-    label: {
-      // This callback updates the length to print each frame.
-      text: new Cesium.CallbackProperty(function (time, result){
-        const Points = redLine.polyline.positions.getValue(time, result);
-        const lengthInMeters = Cesium.Cartesian3.distance(Points[0],Points[1]);
-        return `${(lengthInMeters / 1000).toFixed(1)} km`;
-      }, false),
-      font: "20px sans-serif",
-      pixelOffset: new Cesium.Cartesian2(0.0, 20),
-    },
-  });
-        
-  const redLine = viewer.entities.add({
-    polyline: {
-    // This callback updates positions each frame.
-    positions: new Cesium.CallbackProperty(function (time, result) {
-      result=[];
-      var pos0 = gps.position.getValue(time);
-            for(let i=0;i<20;i++){
-              var t1=Cesium.JulianDate.addSeconds(time,15*i,new Cesium.JulianDate());
-              var pos1 = gps.position.getValue(t1);
-              var pos2 = sat.position.getValue(t1);
-              if(pos2!==undefined){
-              //console.log(pos);
-                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
-                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
-              }
-            }
-
-      return result;
-    },false),
-    width: 1,
-    material: Cesium.Color.RED,
-  },
-});
-  const redLine1 = viewer.entities.add({
-    polyline: {
-    // This callback updates positions each frame.
-    positions: new Cesium.CallbackProperty(function (time, result) {
-      result=[];
-      var pos0 = gps.position.getValue(time);
-            for(let i=0;i<80;i++){
-              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
-              var pos1 = gps.position.getValue(t1);
-              var pos2 = sat1.position.getValue(t1);
-              if(pos2!==undefined){
-              //console.log(pos);
-                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
-                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
-              }
-            }
-
-      return result;
-    },false),
-    width: 1,
-    material: Cesium.Color.YELLOW,
-  },
-});
-  const redLine2 = viewer.entities.add({
-    polyline: {
-    // This callback updates positions each frame.
-    positions: new Cesium.CallbackProperty(function (time, result) {
-      result=[];
-      var pos0 = gps.position.getValue(time);
-            for(let i=0;i<80;i++){
-              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
-              var pos1 = gps.position.getValue(t1);
-              var pos2 = sat2.position.getValue(t1);
-              if(pos2!==undefined){
-              //console.log(pos);
-                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
-                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
-              }
-            }
-
-      return result;
-    },false),
-    width: 1,
-    material: Cesium.Color.GREEN,
-  },
-});
-  const redLine3 = viewer.entities.add({
-    polyline: {
-    // This callback updates positions each frame.
-    positions: new Cesium.CallbackProperty(function (time, result) {
-      result=[];
-      var pos0 = gps.position.getValue(time);
-            for(let i=0;i<80;i++){
-              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
-              var pos1 = gps.position.getValue(t1);
-              var pos2 = sat3.position.getValue(t1);
-              if(pos2!==undefined){
-              //console.log(pos);
-                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
-                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
-              }
-            }
-
-      return result;
-    },false),
-    width: 1,
-    material: Cesium.Color.VIOLET,
-  },
-});
-  const redLine4 = viewer.entities.add({
-    polyline: {
-    // This callback updates positions each frame.
-    positions: new Cesium.CallbackProperty(function (time, result) {
-      result=[];
-      var pos0 = gps.position.getValue(time);
-            for(let i=0;i<80;i++){
-              var t1=Cesium.JulianDate.addSeconds(time,1800*i,new Cesium.JulianDate());
-              var pos1 = gps.position.getValue(t1);
-              var pos2 = sat4.position.getValue(t1);
-              if(pos2!==undefined){
-              //console.log(pos);
-                const diff = Cesium.Cartesian3.subtract(pos2, pos1, new Cesium.Cartesian3());
-                result.push(Cesium.Cartesian3.add(pos0, diff, new Cesium.Cartesian3()));
-              }
-            }
-
-      return result;
-    },false),
-    width: 1,
-    material: Cesium.Color.MEDIUMSLATEBLUE,
-  },
-});
 
 
   Sandcastle.addToolbarButton("fly to:",function(){},"flytoMenu");
@@ -258,21 +193,7 @@ promise.then(function (dataSource) {
   Sandcastle.addToolbarMenu(optionshide,"hideMenu");
   Sandcastle.addToolbarButton("Orbit:",function(){},"pathMenu");
   Sandcastle.addToolbarMenu(optionpath,"pathMenu");
-  Sandcastle.addToggleButton("CHASE",true,function(checked){
-    redLine.show=checked;
-  },"sampleButtons1");
-  Sandcastle.addToggleButton("1km",true,function(checked){
-    redLine1.show=checked;
-  },"sampleButtons2");
-  Sandcastle.addToggleButton("3km",true,function(checked){
-    redLine2.show=checked;
-  },"sampleButtons2");
-  Sandcastle.addToggleButton("5km",true,function(checked){
-    redLine3.show=checked;
-  },"sampleButtons3");
-  Sandcastle.addToggleButton("10km",true,function(checked){
-    redLine4.show=checked;
-  },"sampleButtons3");
+
 
 });//Sandcastle_End
     Sandcastle.finishedLoading();
